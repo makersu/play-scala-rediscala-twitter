@@ -6,6 +6,10 @@ lazy val root = (project in file(".")).enablePlugins(PlayScala)
 
 scalaVersion := "2.11.8"
 
+libraryDependencies ++= Seq(
+  "com.github.etaty" %% "rediscala" % "1.7.0"
+)
+
 // using Alpine Linux image with OracleJDK 8
 dockerBaseImage := "frolvlad/alpine-oraclejdk8"
 

@@ -8,3 +8,23 @@ GET     /                           controllers.HomeController.index
 
 # Map static resources from the /public folder to the /assets URL path
 GET     /assets/*file               controllers.Assets.versioned(path="/public", file: Asset)
+
+#GET /user/follow/:uid                   controllers.FollowController.follow(uid: String)
+#GET /user/unfollow/:uid                 controllers.FollowController.unfollow(uid: String)
+
+# TODO: refactoring to get user from play.api.mvc.RequestHeader
+# TODO: refactoring to follow/unfollow with the same api
+# TODO: refactoring to HTTP PUT method
+# http://localhost:9000/user/1000/follow/5000
+GET /user/:uid/follow/:toFollowUid      controllers.FollowController.follow(uid: String, toFollowUid: String)
+
+# http://localhost:9000/user/1000/unfollow/5000
+GET /user/:uid/unfollow/:unFollowUid      controllers.FollowController.unfollow(uid: String, unFollowUid: String)
+
+# http://localhost:9000/user/1000/following
+GET /user/:uid/following                controllers.FollowController.getFollowing(uid: String)
+
+# http://localhost:9000/user/1000/followers
+GET /user/:uid/followers                controllers.FollowController.getFollowers(uid: String)
+
+
