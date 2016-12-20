@@ -41,18 +41,46 @@ class FollowService @Inject()(implicit _system: ActorSystem) {
     } yield {}
   }
 
+  // TODO: pagination
   // Get the following of the User
   def getFollowing(uid: String): Future[Seq[String]] = {
     for{
       following <- redis.zrange(RedisSchema.following(uid), 0, -1)
-    } yield (following.map(_.utf8String ))
+    } yield (following.map(_.utf8String))
   }
 
+  // TODO: pagination
   // Get the followers of the User
   def getFollowers(uid: String): Future[Seq[String]] = {
     for{
       followers <- redis.zrange(RedisSchema.followers(uid), 0, -1)
-    } yield (followers.map(_.utf8String ))
+    } yield (followers.map(_.utf8String))
+
+  }
+
+  // Get the following in common
+  def getCommonFollowing(uid: String, intersectionUid: String): Future[Seq[String]] = {
+    Logger.debug(s"$uid get the common following with $intersectionUid")
+    for {
+      _ <- redis.zinterstore(RedisSchema.commonFollowing(uid,intersectionUid), RedisSchema.following(uid), Seq(RedisSchema.following(intersectionUid)))
+      commonFollowing <- redis.zrange(RedisSchema.commonFollowing(uid,intersectionUid), 0, -1)
+    } yield {
+//      Logger.debug("" + commonFollowing.map(_.utf8String))
+      commonFollowing.map(_.utf8String )
+    }
+
+  }
+
+  // Get the followers in common
+  def getCommonFollowers(uid: String, intersectionUid: String): Future[Seq[String]] = {
+    Logger.debug(s"$uid get the common followers with $intersectionUid")
+    for {
+      _ <- redis.zinterstore(RedisSchema.commonFollowers(uid,intersectionUid), RedisSchema.followers(uid), Seq(RedisSchema.followers(intersectionUid)))
+      commonFollowing <- redis.zrange(RedisSchema.commonFollowers(uid,intersectionUid), 0, -1)
+    } yield {
+      //      Logger.debug("" + commonFollowing.map(_.utf8String))
+      commonFollowing.map(_.utf8String )
+    }
 
   }
 

@@ -38,6 +38,20 @@ class FollowController @Inject()(followService: FollowService) extends Controlle
     }
   }
 
+  //TODO: get the userId from RequestHeader
+  def getCommonFollowing(userId: String, intersectionUid: String) = Action.async {
+    followService.getCommonFollowing(userId, intersectionUid).map { commonFollowing =>
+      Ok(Json.obj("common_following" -> commonFollowing))
+    }
+  }
+
+  //TODO: get the userId from RequestHeader
+  def getCommonFollowers(userId: String, intersectionUid: String) = Action.async {
+    followService.getCommonFollowers(userId, intersectionUid).map { commonFollowers =>
+      Ok(Json.obj("common_followers" -> commonFollowers))
+    }
+  }
+
   //  def unfollow(to_unfollow: String) = TODO
 
 

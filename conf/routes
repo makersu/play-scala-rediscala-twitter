@@ -27,4 +27,10 @@ GET /user/:uid/following                controllers.FollowController.getFollowin
 # http://localhost:9000/user/1000/followers
 GET /user/:uid/followers                controllers.FollowController.getFollowers(uid: String)
 
+# http://localhost:9000/user/1000/commonfollowing/1001
+GET /user/:uid/commonfollowing/:intersectionUid      controllers.FollowController.getCommonFollowing(uid: String, intersectionUid: String)
+
+# http://localhost:9000/user/5001/commonfollowers/5002
+GET /user/:uid/commonfollowers/:intersectionUid      controllers.FollowController.getCommonFollowers(uid: String, intersectionUid: String)
+
 
