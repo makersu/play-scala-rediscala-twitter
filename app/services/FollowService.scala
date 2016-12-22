@@ -3,21 +3,26 @@ package services
 import javax.inject._
 
 import akka.actor._
-import play.api.Logger
-import redis.RedisClient
+import play.api.{Configuration, Logger, Play}
+import redis.{RedisClient, RedisCluster, RedisServer}
 import repository.RedisSchema
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import redis.protocol._
 
 /**
   * Created by marksu on 12/19/16.
   */
 @Singleton
-class FollowService @Inject()(implicit _system: ActorSystem) {
+class FollowService @Inject()(implicit _system: ActorSystem, config: Configuration) {
 
   //TODO: refoactoring move to DAO
-  val redis = RedisClient(host="10.8.3.124", port=7000)
+//  val redisClient = RedisClient()
+
+  val host = "10.8.3.124"
+  val posts= Seq(7000, 7001, 7002)
+  val redisClient = RedisCluster(posts.map(p=>RedisServer(host,p)))
 
   // follow a user
   def follow(uid: String, toFollowUid: String): Future[Unit] = {
@@ -26,8 +31,8 @@ class FollowService @Inject()(implicit _system: ActorSystem) {
     val timestamp = System.currentTimeMillis
 
     for {
-      _ <- redis.zadd(RedisSchema.following(uid), (timestamp, toFollowUid))
-      _ <- redis.zadd(RedisSchema.followers(toFollowUid), (timestamp, uid))
+      _ <- redisClient.zadd(RedisSchema.following(uid), (timestamp, toFollowUid))
+      _ <- redisClient.zadd(RedisSchema.followers(toFollowUid), (timestamp, uid))
     } yield {}
   }
 
@@ -36,8 +41,8 @@ class FollowService @Inject()(implicit _system: ActorSystem) {
     Logger.debug(s"$uid unfollowing $unFollowUid")
 
     for {
-      _ <- redis.zrem(RedisSchema.following(uid), (unFollowUid))
-      _ <- redis.zrem(RedisSchema.followers(unFollowUid), (uid))
+      _ <- redisClient.zrem(RedisSchema.following(uid), (unFollowUid))
+      _ <- redisClient.zrem(RedisSchema.followers(unFollowUid), (uid))
     } yield {}
   }
 
@@ -45,7 +50,7 @@ class FollowService @Inject()(implicit _system: ActorSystem) {
   // Get the following of the User
   def getFollowing(uid: String): Future[Seq[String]] = {
     for{
-      following <- redis.zrange(RedisSchema.following(uid), 0, -1)
+      following <- redisClient.zrange(RedisSchema.following(uid), 0, -1)
     } yield (following.map(_.utf8String))
   }
 
@@ -53,7 +58,7 @@ class FollowService @Inject()(implicit _system: ActorSystem) {
   // Get the followers of the User
   def getFollowers(uid: String): Future[Seq[String]] = {
     for{
-      followers <- redis.zrange(RedisSchema.followers(uid), 0, -1)
+      followers <- redisClient.zrange(RedisSchema.followers(uid), 0, -1)
     } yield (followers.map(_.utf8String))
 
   }
@@ -62,8 +67,8 @@ class FollowService @Inject()(implicit _system: ActorSystem) {
   def getCommonFollowing(uid: String, intersectionUid: String): Future[Seq[String]] = {
     Logger.debug(s"$uid get the common following with $intersectionUid")
     for {
-      _ <- redis.zinterstore(RedisSchema.commonFollowing(uid,intersectionUid), RedisSchema.following(uid), Seq(RedisSchema.following(intersectionUid)))
-      commonFollowing <- redis.zrange(RedisSchema.commonFollowing(uid,intersectionUid), 0, -1)
+      _ <- redisClient.zinterstore(RedisSchema.commonFollowing(uid,intersectionUid), RedisSchema.following(uid), Seq(RedisSchema.following(intersectionUid)))
+      commonFollowing <- redisClient.zrange(RedisSchema.commonFollowing(uid,intersectionUid), 0, -1)
     } yield {
 //      Logger.debug("" + commonFollowing.map(_.utf8String))
       commonFollowing.map(_.utf8String )
@@ -75,8 +80,8 @@ class FollowService @Inject()(implicit _system: ActorSystem) {
   def getCommonFollowers(uid: String, intersectionUid: String): Future[Seq[String]] = {
     Logger.debug(s"$uid get the common followers with $intersectionUid")
     for {
-      _ <- redis.zinterstore(RedisSchema.commonFollowers(uid,intersectionUid), RedisSchema.followers(uid), Seq(RedisSchema.followers(intersectionUid)))
-      commonFollowing <- redis.zrange(RedisSchema.commonFollowers(uid,intersectionUid), 0, -1)
+      _ <- redisClient.zinterstore(RedisSchema.commonFollowers(uid,intersectionUid), RedisSchema.followers(uid), Seq(RedisSchema.followers(intersectionUid)))
+      commonFollowing <- redisClient.zrange(RedisSchema.commonFollowers(uid,intersectionUid), 0, -1)
     } yield {
       //      Logger.debug("" + commonFollowing.map(_.utf8String))
       commonFollowing.map(_.utf8String )
